@@ -88,18 +88,18 @@ install_pm2() {
 
 # 功能1：下载、解压缩并运行帮助命令
 download_and_setup() {
-    wget https://github.com/hemilabs/heminetwork/releases/download/v0.4.4/heminetwork_v0.4.4_linux_amd64.tar.gz -O heminetwork_v0.4.4_linux_amd64.tar.gz
+    wget https://github.com/hemilabs/heminetwork/releases/download/v0.4.5/heminetwork_v0.4.5_linux_amd64.tar.gz -O heminetwork_v0.4.5_linux_amd64.tar.gz
 
     # 创建目标文件夹 (如果不存在)
     TARGET_DIR="$HOME/heminetwork"
     mkdir -p "$TARGET_DIR"
 
     # 解压文件到目标文件夹
-    tar -xvf heminetwork_v0.4.4_linux_amd64.tar.gz -C "$TARGET_DIR"
+    tar -xvf heminetwork_v0.4.5_linux_amd64.tar.gz -C "$TARGET_DIR"
 
     # 移动文件到 heminetwork 目录
-    mv "$TARGET_DIR/heminetwork_v0.4.4_linux_amd64/"* "$TARGET_DIR/"
-    rmdir "$TARGET_DIR/heminetwork_v0.4.4_linux_amd64"
+    mv "$TARGET_DIR/heminetwork_v0.4.5_linux_amd64/"* "$TARGET_DIR/"
+    rmdir "$TARGET_DIR/heminetwork_v0.4.5_linux_amd64"
 
     # 切换到目标文件夹
     cd $HOME/heminetwork
@@ -142,9 +142,17 @@ view_logs() {
     pm2 logs popmd
 }
 
-# 功能6：更新到 v0.4.4
-update_to_v038() {
-    echo "开始更新到 v0.4.4 / Starting update to v0.4.4"
+# 功能6：更新到指定版本
+update_to_v() {
+
+    read -p "请输入你要更新的版本号（如v0.4.5） / Please enter the version number you want to update (e.g. v0.4.5): " HEMINETWORK_VERSION
+
+    FILE_LINK="https://github.com/hemilabs/heminetwork/releases/download/${HEMINETWORK_VERSION}/heminetwork_${HEMINETWORK_VERSION}_linux_amd64.tar.gz"
+
+    # 检查文件链接是否存在
+    curl --output /dev/null --silent --head --fail "$FILE_LINK" || { echo "版本不存在，停止执行 / Version does not exist, stopping"; exit 1; }
+
+    echo "开始更新到 $HEMINETWORK_VERSION / Starting update to $HEMINETWORK_VERSION"
 
     # 停止并删除 pm2 中的 popmd 进程（如果存在）
     echo "尝试停止并删除 pm2 中的 popmd 进程... / Attempting to stop and delete popmd process in pm2..."
@@ -156,13 +164,20 @@ update_to_v038() {
     echo "删除旧的 heminetwork 文件夹... / Deleting old heminetwork folder..."
     rm -rf "$HOME/heminetwork"
 
-    # 下载并解压 v0.4.4 版本
-    echo "下载 v0.4.4 版本的压缩包... / Downloading v0.4.4 version archive..."
-    wget https://github.com/hemilabs/heminetwork/releases/download/v0.4.4/heminetwork_v0.4.4_linux_amd64.tar.gz -O /tmp/heminetwork_v0.4.4_linux_amd64.tar.gz
+    # 下载并解压 $HEMINETWORK_VERSION 版本
+    echo "下载 $HEMINETWORK_VERSION 版本的压缩包... / Downloading $HEMINETWORK_VERSION version archive..."
+    if wget "$FILE_LINK" -O /tmp/heminetwork_${HEMINETWORK_VERSION}_linux_amd64.tar.gz; then
+        echo "解压 $HEMINETWORK_VERSION 版本的压缩包到 heminetwork 文件夹... / Extracting $HEMINETWORK_VERSION version archive to heminetwork folder..."
+        mkdir -p "$HOME/heminetwork"
+        tar -xzf /tmp/heminetwork_${HEMINETWORK_VERSION}_linux_amd64.tar.gz -C "$HOME/heminetwork" --strip-components=1
 
-    echo "解压 v0.4.4 版本的压缩包到 heminetwork 文件夹... / Extracting v0.4.4 version archive to heminetwork folder..."
-    mkdir -p "$HOME/heminetwork"
-    tar -xzf /tmp/heminetwork_v0.4.4_linux_amd64.tar.gz -C "$HOME/heminetwork" --strip-components=1
+        # 删除压缩包文件
+        rm /tmp/heminetwork_${HEMINETWORK_VERSION}_linux_amd64.tar.gz
+    else
+        echo "下载失败，停止执行 / Download failed, stopping."
+        exit 1
+    fi
+
 
     # 执行主菜单2的功能：设置环境变量
     echo "执行主菜单2的功能：设置环境变量 / Running function 2 from main menu: Setup environment"
@@ -172,22 +187,21 @@ update_to_v038() {
     echo "启动 popmd... / Starting popmd..."
     start_popmd
 
-    echo "更新到 v0.4.4 完成，并重新启动 popmd。/ Update to v0.4.4 completed and popmd restarted."
+    echo "更新到 ${HEMINETWORK_VERSION} 完成，并重新启动 popmd。/ Update to ${HEMINETWORK_VERSION} completed and popmd restarted."
 }
 
 # 主菜单
 main_menu() {
     while true; do
         clear
-        echo "=======================创建自 https://x.com/ccaannddyy11 来自社区 https://t.me/niuwuriji======================="
-        echo "=======================Created by https://x.com/ccaannddyy11 from the community https://t.me/niuwuriji======================="
+        echo "=======================原作者 https://x.com/ccaannddyy11 来自社区二次修改 ======================="
         echo "请选择一个选项: / Please select an option:"
         echo "1. 下载并设置 Heminetwork / Download and setup Heminetwork"
         echo "2. 输入 private_key 和 sats/vB / Input private_key and sats/vB"
         echo "3. 启动 popmd / Start popmd"
         echo "4. 备份地址信息 / Backup address information"
         echo "5. 查看日志 / View logs"
-        echo "6. 更新到 v0.4.4 / Update to v0.4.4"
+        echo "6. 升级到指定版本/ Update to a specific version"
         echo "7. 退出 / Exit"
 
         read -p "请输入选项 (1-7): / Enter your choice (1-7): " choice
@@ -209,7 +223,7 @@ main_menu() {
                 view_logs
                 ;;
             6)
-                update_to_v038
+                update_to_v
                 ;;
             7)
                 echo "退出脚本。/ Exiting the script."
